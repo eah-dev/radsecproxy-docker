@@ -1,0 +1,40 @@
+name: Create and publish Docker images for radsecproxy
+
+on:
+  schedule:
+    # Every Monday at 02:00 UTC
+    - cron: "0 2 * * 1"
+  workflow_dispatch: {}  # Manually triggered
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        version: ["1.11.2"]  # comma separated, folder => VERSIONEN
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Uses the `docker/login-action` action to log in to the Container registry registry using the account and password that will publish the packages.
+      # Once published, the packages are scoped to the account defined here.
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
+      # It uses the `context` parameter to define the build's context as the set of files located in the specified path.
+      # For more information, see "[Usage](https://github.com/docker/build-push-action#usage)" in the README of the `docker/build-push-action` repository.
+      # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.version }}
+          file: ${{ matrix.version }}/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ matrix.version }}
