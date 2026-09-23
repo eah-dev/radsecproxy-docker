@@ -1,0 +1,33 @@
+
+# Baut und veröffentlicht Docker-Images für radsecproxy.
+
+stages:
+  - build
+
+build-and-push:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  parallel:
+    matrix:
+      # comma separated, Ordner => VERSIONEN
+      - VERSION: ["1.11.2", "1.11.4"]
+  rules:
+    # Wöchentlicher Lauf über Pipeline Schedule
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    # Manueller Lauf über "Run pipeline" in der UI (= workflow_dispatch)
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+  before_script:
+    # Log in an der GitLab Container Registry des Projekts
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    # Entspricht docker/build-push-action:
+    # context = ${{ matrix.version }}, file = ${{ matrix.version }}/Dockerfile
+    - docker build
+      --tag "$CI_REGISTRY_IMAGE:$VERSION"
+      --file "$VERSION/Dockerfile"
+      "$VERSION"
+    - docker push "$CI_REGISTRY_IMAGE:$VERSION"
