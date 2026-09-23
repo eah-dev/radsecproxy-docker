@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        version: ["1.11.2"]  # comma separated, folder => VERSIONEN
+        version: ["1.11.2", "1.11.4"]  # comma separated, folder => VERSIONEN
 
     steps:
       - name: Checkout repo
